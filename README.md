@@ -10,9 +10,9 @@ including 9 classes 'motor,bike,rider,truck,bus,person,car,traffic_sign,traffic_
 
 ## Setup
 ### Prerequisites
-* Python 3.X.X
-* Tensorflow 1.X
-* Keras 2.X
+* Python 3.6.5
+* Tensorflow 1.15.0
+* Keras 2.2.5
 
 ## Training your own model
 ### Data preparation
