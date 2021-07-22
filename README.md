@@ -17,7 +17,7 @@ collected by our team and including 9 classes 'motor,bike,rider,truck,bus,person
 ## Training your own model
 ### Data preparation
 ```
-wget https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/VOCdevkit0829.zip
+wget https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip
 unzip -zvf VOCdevkit0829.zip -d 
 cd <model_download_dir>
 python voc_annotation.py  
