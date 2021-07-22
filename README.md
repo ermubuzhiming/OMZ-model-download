@@ -15,20 +15,22 @@ collected by our team and including 9 classes 'motor,bike,rider,truck,bus,person
 * Keras 2.2.5
 
 ## Training your own model
-### Data preparation
+### Dataset preparation
 ```
 wget https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip
-unzip -zvf VOCdevkit0829.zip -d 
-cd <model_download_dir>
+unzip -zvf VOCdevkit0829.zip -d <path_same_with_train.py>
+cd <path_same_with_train.py>
 python voc_annotation.py  
 ```
+You will get 3 files which the model will load the related dataset according to.
 ### Start to train
+You can directly run the file with the default parameters.
 ```
 python train.py
 ```
 or you can modify [train.py](https://github.com/ermubuzhiming/OMZ-model-download/blob/main/train.py) to set 
 `annotation_path`,`classes_path`,`anchors_path`,`weights_path`,`log_dir`, `Init_epoch`,`Freeze_epoch`,`batch_size`,`learning_rate_base`,
-`Freeze_epoch`,`Epoch` and other train parameters, then train it.
+`Freeze_epoch`,`Epoch` and other train parameters, then run the files.
 
 ## Inference
 If you want to test image,modify `FLAG` as `True` in the file [yolo_image.py](https://github.com/ermubuzhiming/OMZ-model-download/blob/main/yolo_image.py),
