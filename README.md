@@ -16,9 +16,15 @@ collected by our team and including 9 classes 'motor,bike,rider,truck,bus,person
 
 ## Training your own model
 ### Dataset preparation
+To download SYGData0829 dataset, you need to follow the steps below:
+1. Go to the [github repo](https://github.com/ermubuzhiming/OMZ-files-download/releases/tag/v1-ly)
+2. Select [`SYGData0829.zip.001`](https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip.001) 、
+[`SYGData0829.zip.002`](https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip.002) 、
+[`SYGData0829.zip.003`](https://github.com/ermubuzhiming/OMZ-files -download/releases/download/v1-ly/SYGData0829.zip.003) 、
+[`SYGData0829.zip.004`](https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip.004) and download archive
+3. Unpack archive
 ```
-wget https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/SYGData0829.zip
-unzip -zvf VOCdevkit0829.zip -d <path_same_with_train.py>
+unzip -zvf SYGData0829.zip -d <path_same_with_train.py>
 cd <path_same_with_train.py>
 python voc_annotation.py  
 ```
