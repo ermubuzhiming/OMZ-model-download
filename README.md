@@ -66,7 +66,7 @@ python get_map3.py
 | Metric            | Value                |
 |-------------------|----------------------|
 | AP@motor          |  94.5%               |
-| AP@truck          |  54.55%              |
-| AP@bus            |  100%                |
-| AP@car            |  90.11%              | 
-| mAP               |  84.81%              | 
+| AP@truck          |  57%                 |
+| AP@bus            |  86%                 |
+| AP@car            |  77%                 | 
+| mAP               |  67.84%              | 
