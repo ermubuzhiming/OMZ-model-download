@@ -11,8 +11,8 @@ from utils.utils import letterbox_image
 
 
 # --------------------------------------------#
-#   使用自己训练好的模型预测需要修改2个参数
-#   model_path和classes_path都需要修改！
+#   Two parameters need to be modified using the self-trained model for prediction
+#   Both model_path and classes_path need to be changed!！
 # --------------------------------------------#
 class YOLO(object):
     _defaults = {
@@ -21,10 +21,8 @@ class YOLO(object):
         "classes_path": 'model_data/car_classes.txt',
         # "score" : 0.5,
         # "iou" : 0.3,
-        "score": 0.3,  # 为了与old model一致
+        "score": 0.3,  
         "iou": 0.45,
-        # 显存比较小可以使用416x416
-        # 显存比较大可以使用608x608
         "model_image_size": (416, 416)
     }
 
@@ -36,7 +34,7 @@ class YOLO(object):
             return "Unrecognized attribute name '" + n + "'"
 
     # ---------------------------------------------------#
-    #   初始化yolo
+    #   Initialize the yolo
     # ---------------------------------------------------#
     def __init__(self, **kwargs):
         self.__dict__.update(self._defaults)
@@ -46,7 +44,7 @@ class YOLO(object):
         self.boxes, self.scores, self.classes = self.generate()
 
     # ---------------------------------------------------#
-    #   获得所有的分类
+    #   Get all categories
     # ---------------------------------------------------#
     def _get_class(self):
         classes_path = os.path.expanduser(self.classes_path)
@@ -56,7 +54,7 @@ class YOLO(object):
         return class_names
 
     # ---------------------------------------------------#
-    #   获得所有的先验框
+    #   Get all prior boxes
     # ---------------------------------------------------#
     def _get_anchors(self):
         anchors_path = os.path.expanduser(self.anchors_path)
@@ -66,18 +64,18 @@ class YOLO(object):
         return np.array(anchors).reshape(-1, 2)
 
     # ---------------------------------------------------#
-    #   获得所有的分类
+    #   Get all categories
     # ---------------------------------------------------#
     def generate(self):
         model_path = os.path.expanduser(self.model_path)
         assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
 
-        # 计算anchor数量
+        # Calculate the number of Anchor
         num_anchors = len(self.anchors)
         num_classes = len(self.class_names)
 
-        # 载入模型，如果原来的模型里已经包括了模型结构则直接载入。
-        # 否则先构建模型再载入
+        # Load the model directly if the original model already contains the model structure.
+        # Otherwise, build the model first and load it later
         try:
             self.yolo_model = load_model(model_path, compile=False)
         except:
@@ -90,7 +88,7 @@ class YOLO(object):
 
         print('{} model, anchors, and classes loaded.'.format(model_path))
 
-        # 画框设置不同的颜色
+        # The frame is set in different colors
         hsv_tuples = [(x / len(self.class_names), 1., 1.)
                       for x in range(len(self.class_names))]
         self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
@@ -98,7 +96,7 @@ class YOLO(object):
             map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)),
                 self.colors))
 
-        # 打乱颜色
+        # Disturb the color
         np.random.seed(10101)
         np.random.shuffle(self.colors)
         np.random.seed(None)
@@ -111,19 +109,19 @@ class YOLO(object):
         return boxes, scores, classes
 
     # ---------------------------------------------------#
-    #   检测图片
+    #   Detection of image
     # ---------------------------------------------------#
     def detect_image(self, image):
         start = timer()
 
-        # 调整图片使其符合输入要求
+        # Adjust the image to fit the input requirements
         new_image_size = self.model_image_size
         boxed_image = letterbox_image(image, new_image_size)
         image_data = np.array(boxed_image, dtype='float32')
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
 
-        # 预测结果
+        # Predicted results
         out_boxes, out_scores, out_classes = self.sess.run(
             [self.boxes, self.scores, self.classes],
             feed_dict={
@@ -133,7 +131,7 @@ class YOLO(object):
             })
 
         print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
-        # 设置字体
+        # Set the font
         font = ImageFont.truetype(font='font/simhei.ttf',
                                   size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
@@ -156,7 +154,7 @@ class YOLO(object):
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
 
-            # 画框框
+            # Picture
             label = '{} {:.2f}'.format(predicted_class, score)
             draw = ImageDraw.Draw(image)
             label_size = draw.textsize(label, font)
