@@ -21,7 +21,7 @@ KTF.set_session(session)
 
 
 # ---------------------------------------------------#
-#   获得类和先验框
+#   Get the class and the prior box
 # ---------------------------------------------------#
 def get_classes(classes_path):
     """loads the classes"""
@@ -40,7 +40,7 @@ def get_anchors(anchors_path):
 
 
 # ---------------------------------------------------#
-#   训练数据生成器
+#   Training data generator
 # ---------------------------------------------------#
 def data_generator(annotation_lines, batch_size, input_shape, anchors, num_classes, mosaic=False):
     """data generator for fit_generator"""
@@ -73,44 +73,39 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
 
 
 # ---------------------------------------------------#
-#   读入xml文件，并输出y_true
+#   Read the XML file and print y_true
 # ---------------------------------------------------#
 def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
     assert (true_boxes[..., 4] < num_classes).all(), 'class id must be less than num_classes'
-    # 一共有三个特征层数
+    #  three characteristic layers
     num_layers = len(anchors) // 3
-    # 先验框
-    # 678为 142,110,  192,243,  459,401
-    # 345为 36,75,  76,55,  72,146
-    # 012为 12,16,  19,36,  40,28
+
+    # 678 142,110,  192,243,  459,401
+    # 345 36,75,  76,55,  72,146
+    # 012 12,16,  19,36,  40,28
     anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]] if num_layers == 3 else [[3, 4, 5], [1, 2, 3]]
 
     true_boxes = np.array(true_boxes, dtype='float32')
     input_shape = np.array(input_shape, dtype='int32')  # 416,416
-    # 读出xy轴，读出长宽
-    # 中心点(m,n,2)
+    # Read the xy axis, read the length and width
     boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
     boxes_wh = true_boxes[..., 2:4] - true_boxes[..., 0:2]
-    # 计算比例
+    # Calculate percentage
     true_boxes[..., 0:2] = boxes_xy / input_shape[:]
     true_boxes[..., 2:4] = boxes_wh / input_shape[:]
 
-    # m张图
     m = true_boxes.shape[0]
-    # 得到网格的shape为13,13;26,26;52,52
     grid_shapes = [input_shape // {0: 32, 1: 16, 2: 8}[e] for e in range(num_layers)]
-    # y_true的格式为(m,13,13,3,85)(m,26,26,3,85)(m,52,52,3,85)
     y_true = [np.zeros((m, grid_shapes[e][0], grid_shapes[e][1], len(anchor_mask[e]), 5 + num_classes),
                        dtype='float32') for e in range(num_layers)]
     # [1,9,2]
     anchors = np.expand_dims(anchors, 0)
     anchor_maxes = anchors / 2.
     anchor_mins = -anchor_maxes
-    # 长宽要大于0才有效
     valid_mask = boxes_wh[..., 0] > 0
 
     for b in range(m):
-        # 对每一张图进行处理
+        # Each graph
         wh = boxes_wh[b, valid_mask[b]]
         if len(wh) == 0:
             continue
@@ -119,7 +114,7 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
         box_maxes = wh / 2.
         box_mins = -box_maxes
 
-        # 计算真实框和哪个先验框最契合
+        # Calculate which real box fits the prior box best
         intersect_mins = np.maximum(box_mins, anchor_mins)
         intersect_maxes = np.minimum(box_maxes, anchor_maxes)
         intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
@@ -127,16 +122,14 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
         box_area = wh[..., 0] * wh[..., 1]
         anchor_area = anchors[..., 0] * anchors[..., 1]
         iou = intersect_area / (box_area + anchor_area - intersect_area)
-        # 维度是(n) 感谢 消尽不死鸟 的提醒
         best_anchor = np.argmax(iou, axis=-1)
 
         for t, n in enumerate(best_anchor):
             for e in range(num_layers):
                 if n in anchor_mask[e]:
-                    # floor用于向下取整
+                    # Floor is used to round down
                     i = np.floor(true_boxes[b, t, 0] * grid_shapes[e][1]).astype('int32')
                     j = np.floor(true_boxes[b, t, 1] * grid_shapes[e][0]).astype('int32')
-                    # 找到真实框在特征层l中第b副图像对应的位置
                     k = anchor_mask[e].index(n)
                     c = true_boxes[b, t, 4].astype('int32')
                     y_true[e][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
@@ -147,60 +140,52 @@ def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
 
 
 # ----------------------------------------------------#
-#   检测精度mAP和pr曲线计算参考视频
-#   https://www.bilibili.com/video/BV1zE411u7Vw
+
 # ----------------------------------------------------#
 if __name__ == "__main__":
-    # 标签的位置
     annotation_path = '2007_train.txt'
-    # 获取classes和anchor的位置
     classes_path = 'model_data/car_classes.txt'
     anchors_path = 'model_data/yolo_anchors.txt'
     # ------------------------------------------------------#
-    #   权值文件请看README，百度网盘下载
-    #   训练自己的数据集时提示维度不匹配正常
-    #   预测的东西都不一样了自然维度不匹配
+    #  
+    #   Training your own data set prompts dimension mismatches
+    #   The predicted things are different ，so the natural dimensions don't match
     # ------------------------------------------------------#
     weights_path = 'model_data/last1.h5'
-    # 获得classes和anchor
     class_names = get_classes(classes_path)
     anchors = get_anchors(anchors_path)
-    # 一共有多少类
     num_classes = len(class_names)
     num_anchors = len(anchors)
-    # 训练后的模型保存的位置
     log_dir = 'logs/000/'
-    # 输入的shape大小
-    # 显存比较小可以使用416x416
-    # 现存比较大可以使用608x608
+    # You can use 416x416 for smaller video memory
+    # You can use 608x608 for smaller video memory
     input_shape = (416, 416)
     mosaic = True
     Cosine_scheduler = False
     label_smoothing = 0
 
-    # 清除session
     K.clear_session()
 
-    # 输入的图像为
+
     image_input = Input(shape=(None, None, 3))
     h, w = input_shape
 
-    # 创建yolo模型
+    # Create the YOLO model
     print('Create YOLOv4 model with {} anchors and {} classes.'.format(num_anchors, num_classes))
     model_body = yolo_body(image_input, num_anchors // 3, num_classes)
 
-    # 载入预训练权重
-    # print('Load weights {}.'.format(weights_path))
-    # model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
+    # Load the pre-training weights
+     print('Load weights {}.'.format(weights_path))
+     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
 
-    # y_true为13,13,3,85
+
     # 26,26,3,85
     # 52,52,3,85
     y_true = [Input(shape=(h // {0: 32, 1: 16, 2: 8}[i], w // {0: 32, 1: 16, 2: 8}[i], num_anchors // 3,
                            num_classes + 5)) for i in range(3)]
 
-    # 输入为*model_body.input, *y_true
-    # 输出为model_loss
+    # input:*model_body.input, *y_true
+    # output:model_loss
     loss_input = [*model_body.output, *y_true]
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
                         arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5,
@@ -208,13 +193,13 @@ if __name__ == "__main__":
 
     model = Model([model_body.input, *y_true], model_loss)
 
-    # 训练参数设置
+    # Training Parameter Setting
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5',
                                  monitor='val_loss', save_weights_only=True, save_best_only=False, period=1)
     early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=6, verbose=1)
 
-    # 0.1用于验证，0.9用于训练
+    # 0.1 for verification and 0.9 for training
     val_split = 0.1
     with open(annotation_path) as f:
         lines = f.readlines()
@@ -225,34 +210,26 @@ if __name__ == "__main__":
     num_train = len(lines) - num_val
 
     # ------------------------------------------------------#
-    #   主干特征提取网络特征通用，冻结训练可以加快训练速度
-    #   也可以在训练初期防止权值被破坏。
-    #   Init_Epoch为起始世代
-    #   Freeze_Epoch为冻结训练的世代
-    #   Epoch总训练世代
-    #   提示OOM或者显存不足请调小Batch_size
+    #   The main feature extraction network features are universal and freezing training can speed up training
+    #   It can also prevent weights from being destroyed at the beginning of training.
+    #   If OOM or video memory is insufficient, adjust Batch_size
     # ------------------------------------------------------#
     freeze_layers = 249
     for i in range(freeze_layers):
         model_body.layers[i].trainable = False
     print('Freeze the first {} layers of total {} layers.'.format(freeze_layers, len(model_body.layers)))
 
-    # 调整非主干模型first
+    # Adjust the non-trunk model
     if True:
         Init_epoch = 0
         Freeze_epoch = 25
-        # batch_size大小，每次喂入多少数据
         batch_size = 8
-        # 最大学习率
         learning_rate_base = 1e-3
-        if Cosine_scheduler:
-            # 预热期
             warmup_epoch = int((Freeze_epoch - Init_epoch) * 0.2)
-            # 总共的步长
             total_steps = int((Freeze_epoch - Init_epoch) * num_train / batch_size)
-            # 预热步长
+
             warmup_steps = int(warmup_epoch * num_train / batch_size)
-            # 学习率
+            
             reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_base,
                                                    total_steps=total_steps,
                                                    warmup_learning_rate=1e-4,
@@ -280,23 +257,21 @@ if __name__ == "__main__":
     for i in range(freeze_layers):
         model_body.layers[i].trainable = True
 
-    # 解冻后训练
+    # Post-thawing training
     if True:
         Freeze_epoch = 25
         Epoch = 50
-        # batch_size大小，每次喂入多少数据
         batch_size = 2
 
-        # 最大学习率
         learning_rate_base = 1e-4
         if Cosine_scheduler:
-            # 预热期
+
             warmup_epoch = int((Epoch - Freeze_epoch) * 0.2)
-            # 总共的步长
+
             total_steps = int((Epoch - Freeze_epoch) * num_train / batch_size)
-            # 预热步长
+
             warmup_steps = int(warmup_epoch * num_train / batch_size)
-            # 学习率
+ 
             reduce_lr = WarmUpCosineDecayScheduler(learning_rate_base=learning_rate_base,
                                                    total_steps=total_steps,
                                                    warmup_learning_rate=1e-5,
