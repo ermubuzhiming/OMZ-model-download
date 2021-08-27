@@ -1,5 +1,5 @@
 # -------------------------------------#
-#       调用摄像头检测
+#       Camera Detection
 # -------------------------------------#
 from yolo import YOLO
 from PIL import Image
@@ -9,7 +9,6 @@ import time
 yolo = YOLO()
 
 
-# 调用摄像头
 # capture=cv2.VideoCapture(0) #
 capture = cv2.VideoCapture("a1.mp4")
 
@@ -17,17 +16,16 @@ i = 0
 fps = 0.0
 while(True):
     t1 = time.time()
-    # 读取某一帧
+    # Read a frame
     ref, frame = capture.read()
-    # 格式转变，BGRtoRGB
+    # Format transformation, BGRtoRGB
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    # 转变成Image
+
     frame = Image.fromarray(np.uint8(frame))
 
-    # 进行检测
+    # testing
     frame = np.array(yolo.detect_image(frame))
 
-    # RGBtoBGR满足opencv显示格式
     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
     
     fps = (fps + (1./(time.time()-t1))) / 2
