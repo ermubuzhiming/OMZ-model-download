@@ -12,7 +12,7 @@ import os
 # config.gpu_options.per_process_gpu_memory_fraction = 0.95
 # session = tf.Session(config=config)
 # KTF.set_session(session)
-def detect_img(img, yolo):
+# def detect_img(img, yolo):
     r_image = yolo.detect_image(img)
     return r_image
 
