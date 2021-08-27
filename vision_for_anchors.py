@@ -8,7 +8,7 @@ def sigmoid(x):
 
 
 # ---------------------------------------------------#
-#   将预测值的每个特征层调成真实值
+#   Adjust each characteristic layer of the predicted value to the true value
 # ---------------------------------------------------#
 # 13x13
 def yolo_head(feats, anchors, num_classes):
@@ -17,7 +17,7 @@ def yolo_head(feats, anchors, num_classes):
     # [1, 1, 1, num_anchors, 2]
     anchors_tensor = np.reshape(anchors, [1, 1, 1, num_anchors, 2]) / 32
 
-    # 获得x，y的网格
+    # Get the grid of x and y
     # (13,13, 1, 2)
     grid_shape = np.shape(feats)[1:3]  # height, width
     print(grid_shape)
@@ -30,9 +30,7 @@ def yolo_head(feats, anchors, num_classes):
     # (batch_size,13,13,3,85)
     feats = np.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
 
-    # 将预测值调成真实值
-    # box_xy对应框的中心点
-    # box_wh对应框的宽和高
+    # Adjust the predicted value to the real value
     box_xy = (sigmoid(feats[..., :2]) + grid)
     box_wh = np.exp(feats[..., 2:4]) * anchors_tensor
     # box_confidence = sigmoid(feats[..., 4:5])
