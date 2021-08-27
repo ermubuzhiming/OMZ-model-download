@@ -5,8 +5,7 @@
 
 ## Introduction
 A YOLOv4-MobileNet object detection pipeline inherited from [keras-YOLOv3-model-set](https://github.com/david8862/keras-YOLOv3-model-set) and [keras-yolo3-Mobilenet](https://github.com/Adamdad/keras-YOLOv3-mobilenet). 
-Implement with keras, including model training/tuning, model evaluation and on device deployment. The model supports [dataset](https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly/VOCdevkit0829.zip) 
-collected by our team and including 9 classes 'motor,bike,rider,truck,bus,person,car,traffic_sign,traffic_light'.
+Implement with keras, including model training/tuning, model evaluation and on device deployment. The model supports [dataset called SYGData0829](https://github.com/ermubuzhiming/OMZ-files-download/releases/download/v1-ly) collected by our team and including 4 classes which are 'motor,bike,truck,bus'.
 
 ## Setup
 ### Prerequisites
@@ -66,9 +65,8 @@ python get_map3.py
 ### evalution metric and result
 | Metric            | Value                |
 |-------------------|----------------------|
-| AP@motor          | Detection            |
+| AP@motor          |                      |
 | AP@truck          |                      |
 | AP@bus            |                      |
 | AP@car            |                      | 
 | mAP               |                      | 
-|             |                      | 
