@@ -23,7 +23,7 @@ class Mish(Layer):
 
 
 # --------------------------------------------------#
-#   单次卷积
+#   A single convolution
 # --------------------------------------------------#
 @wraps(Conv2D)
 def DarknetConv2D(*args, **kwargs):
@@ -34,7 +34,7 @@ def DarknetConv2D(*args, **kwargs):
 
 
 # ---------------------------------------------------#
-#   卷积块
+#   
 #   DarknetConv2D + BatchNormalization + Mish
 # ---------------------------------------------------#
 def DarknetConv2D_BN_Mish(*args, **kwargs):
@@ -47,36 +47,36 @@ def DarknetConv2D_BN_Mish(*args, **kwargs):
 
 
 # ---------------------------------------------------#
-#   CSPdarknet的结构块
-#   存在一个大残差边
-#   这个大残差边绕过了很多的残差结构
+#   Building blocks for CSPdarknet
+#   There's a big residual edge
+#   This big residual edge bypasses a lot of residual structures
 # ---------------------------------------------------#
 def resblock_body(x, num_filters, num_blocks, all_narrow=True):
-    # 进行长和宽的压缩
+    # Compression of length and width
     preconv1 = ZeroPadding2D(((1, 0), (1, 0)))(x)
     preconv1 = DarknetConv2D_BN_Mish(num_filters, (3, 3), strides=(2, 2))(preconv1)
 
-    # 生成一个大的残差边
+    # It makes a big residual edge
     shortconv = DarknetConv2D_BN_Mish(num_filters // 2 if all_narrow else num_filters, (1, 1))(preconv1)
 
-    # 主干部分的卷积
+    # The convolution of the trunk
     mainconv = DarknetConv2D_BN_Mish(num_filters // 2 if all_narrow else num_filters, (1, 1))(preconv1)
-    # 1x1卷积对通道数进行整合->3x3卷积提取特征，使用残差结构
+    # 1x1 convolution integrates the number of channels - > Feature extraction using 3x3 convolution and residual structure
     for i in range(num_blocks):
         y = compose(
             DarknetConv2D_BN_Mish(num_filters // 2, (1, 1)),
             DarknetConv2D_BN_Mish(num_filters // 2 if all_narrow else num_filters, (3, 3)))(mainconv)
         mainconv = Add()([mainconv, y])
-    # 1x1卷积后和残差边堆叠
+    # 1x1 convolved with the residual edge
     postconv = DarknetConv2D_BN_Mish(num_filters // 2 if all_narrow else num_filters, (1, 1))(mainconv)
     route = Concatenate()([postconv, shortconv])
 
-    # 最后对通道数进行整合
+    # Finally, the number of channels is integrated
     return DarknetConv2D_BN_Mish(num_filters, (1, 1))(route)
 
 
 # ---------------------------------------------------#
-#   darknet53 的主体部分
+#   darknet53 The main part of darknet53
 # ---------------------------------------------------#
 def darknet_body(x):
     x = DarknetConv2D_BN_Mish(32, (3, 3))(x)
