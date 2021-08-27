@@ -21,32 +21,30 @@ def avg_iou(box, cluster):
 
 
 def kmeans(box, k):
-    # 取出一共有多少框
+    # Take out the box
     row = box.shape[0]
 
-    # 每个框各个点的位置
+    # The position of each point in each box
     distance = np.empty((row, k))
 
-    # 最后的聚类位置
+    # The last clustering location
     last_clu = np.zeros((row,))
 
     np.random.seed()
 
-    # 随机选5个当聚类中心
+    # Randomly selected as clustering centers
     cluster = box[np.random.choice(row, k, replace=False)]
     # cluster = random.sample(row, k)
     while True:
-        # 计算每一行距离五个点的iou情况。
+        # Calculate the IOU case for each row five points away
         for i in range(row):
             distance[i] = 1 - cas_iou(box[i], cluster)
 
-        # 取出最小点
         near = np.argmin(distance, axis=1)
 
         if (last_clu == near).all():
             break
 
-        # 求每一个类的中位点
         for j in range(k):
             cluster[j] = np.median(
                 box[near == j], axis=0)
@@ -58,12 +56,10 @@ def kmeans(box, k):
 
 def load_data(path):
     data = []
-    # 对于每一个xml都寻找box
     for xml_file in glob.glob('{}/*xml'.format(path)):
         tree = ET.parse(xml_file)
         height = int(tree.findtext('./size/height'))
         width = int(tree.findtext('./size/width'))
-        # 对于每一个目标都获得它的宽高
         for obj in tree.iter('object'):
             xmin = int(float(obj.findtext('bndbox/xmin'))) / width
             ymin = int(float(obj.findtext('bndbox/ymin'))) / height
@@ -74,24 +70,16 @@ def load_data(path):
             ymin = np.float64(ymin)
             xmax = np.float64(xmax)
             ymax = np.float64(ymax)
-            # 得到宽高
             data.append([xmax - xmin, ymax - ymin])
     return np.array(data)
 
 
 if __name__ == '__main__':
-    # 运行该程序会计算'./VOCdevkit/VOC2007/Annotations'的xml
-    # 会生成yolo_anchors.txt
     SIZE = 416
     anchors_num = 9
-    # 载入数据集，可以使用VOC的xml
     path = r'./VOCdevkit/VOC2007/Annotations'
-
-    # 载入所有的xml
-    # 存储格式为转化为比例后的width,height
     data = load_data(path)
-
-    # 使用k聚类算法
+    
     out = kmeans(data, anchors_num)
     out = out[np.argsort(out[:, 0])]
     print('acc:{:.2f}%'.format(avg_iou(data, out) * 100))
